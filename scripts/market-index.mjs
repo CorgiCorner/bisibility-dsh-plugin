@@ -35,7 +35,7 @@ if (metadata) {
   let zh;
   try { zh = JSON.parse(git('show', `${commit}:locale/zh.json`))?.meta?.title; } catch { /* optional locale */ }
   if (zh !== undefined && (typeof zh !== 'string' || !zh.trim())) throw Error('Invalid Chinese title');
-  const title = { en: 'Bisibility', ...(zh ? { zh } : {}) };
+  const title = { en: 'bisibility', ...(zh ? { zh } : {}) };
   plugins.push({ name: pkg.name, title, description: pkg.description, icon: 'icons/icon.png', author: 'CorgiCorner', homepage: pkg.homepage, repository: { url: repoUrl }, versions });
   const icon = execFileSync('git', ['show', `${commit}:icon.png`]);
   mkdirSync(join(out, 'icons'), { recursive: true });

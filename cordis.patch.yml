@@ -18,7 +18,7 @@
       name: '@deepseek-ai/dsh-agent-preset'
       config:
         id: bisibility
-        name: Bisibility
-        description: Bisibility tools for SEO and AI visibility work.
+        name: bisibility
+        description: bisibility tools for SEO and AI visibility work.
         order: 20
         plugins: []

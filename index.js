@@ -31,7 +31,7 @@ const DEFAULTS = {
   issuer: 'https://eu.bisibility.com',
   resource: 'https://bisibility.com/api/mcp',
   clientName: 'DeepSeek Harness',
-  scope: 'read write offline_access',
+  scope: 'openid email read write offline_access',
   serverName: 'bisibility',
   toolCallTimeoutMs: 300000,
 }
@@ -67,6 +67,15 @@ const USERINFO_TIMEOUT_MS = 10000
  * reports its timeout instead of being preempted by this bridge.
  */
 const PROXY_GRACE_MS = 30000
+
+/** Plugin market index that lists the published versions of this plugin. */
+const MARKET_INDEX_URL = 'https://corgicorner.github.io/bisibility-dsh-plugin/index.json'
+
+/** How often the Host asks the market index for a newer version, in milliseconds. */
+const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+
+/** Deadline for one market index read, in milliseconds. */
+const UPDATE_CHECK_TIMEOUT_MS = 10000
 
 /** How long a status read waits for a reconnect attempt before answering. */
 const STATUS_RECONNECT_WAIT_MS = 5000
@@ -231,6 +240,50 @@ async function readBody(req) {
 }
 
 /**
+ * Describe an OAuth error answer, such as `invalid_grant: refresh token expired`.
+ * @param payload - the parsed error body, or null.
+ * @returns the description, or an empty string when the body names no error.
+ */
+function oauthErrorDetail(payload) {
+  if (payload === null || typeof payload !== 'object' || typeof payload.error !== 'string') return ''
+  const description = typeof payload.error_description === 'string' ? `: ${payload.error_description}` : ''
+  return ` (${payload.error}${description})`
+}
+
+/**
+ * Compare two release versions `X.Y.Z`; prereleases are not compared.
+ * @param left - a version.
+ * @param right - another version.
+ * @returns a positive number when left is newer, negative when older, 0 when equal or not comparable.
+ */
+export function compareVersions(left, right) {
+  const parse = (value) => (typeof value === 'string' && /^\d+\.\d+\.\d+$/.test(value) ? value.split('.').map(Number) : null)
+  const a = parse(left)
+  const b = parse(right)
+  if (a === null || b === null) return 0
+  for (let i = 0; i < 3; i += 1) if (a[i] !== b[i]) return a[i] - b[i]
+  return 0
+}
+
+/**
+ * Pick the newest release of this plugin from a plugin market index.
+ * @param index - the parsed index (format 1).
+ * @param name - the package name.
+ * @returns the newest `X.Y.Z` version, or null.
+ */
+export function latestMarketVersion(index, name) {
+  const plugin = Array.isArray(index?.plugins) ? index.plugins.find((entry) => entry?.name === name) : undefined
+  if (plugin === undefined || !Array.isArray(plugin.versions)) return null
+  let latest = null
+  for (const entry of plugin.versions) {
+    const version = entry?.version
+    if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) continue
+    if (latest === null || compareVersions(version, latest) > 0) latest = version
+  }
+  return latest
+}
+
+/**
  * Whether a failed token refresh means the grant itself was rejected. Only
  * then is the stored refresh token useless; a timeout, a network failure or a
  * 5xx keeps it for the next attempt.
@@ -290,6 +343,7 @@ export function apply(ctx, config) {
     error: null,
     refreshing: null,
     updateRequired: false,
+    latestVersion: null,
     minVersion: null,
   }
 
@@ -420,12 +474,19 @@ export function apply(ctx, config) {
    * stored registration while the callback address is unchanged.
    * @returns the client identifier.
    */
-  const ensureClientId = async () => {
+  const ensureClientId = async (forAuthorization = false) => {
     const stored = await readCredential(CLIENT_ID_REF)
     if (stored !== null) {
       try {
         const parsed = JSON.parse(stored)
-        if (parsed !== null && parsed.redirectUri === redirectUri && typeof parsed.clientId === 'string') {
+        // A refresh token belongs to the client it was issued to: the server
+        // answers 400 invalid_client for any other client_id. Refreshes and the
+        // code exchange therefore always keep the stored client, even when the
+        // harness started on another port. Only a new sign-in registers again,
+        // because the server checks its redirect URI and scopes.
+        const reusable =
+          !forAuthorization || (parsed?.redirectUri === redirectUri && parsed?.scope === settings.scope)
+        if (parsed !== null && typeof parsed.clientId === 'string' && reusable) {
           return parsed.clientId
         }
       } catch (error) {
@@ -454,7 +515,7 @@ export function apply(ctx, config) {
     if (!response.ok || payload === null || typeof payload.client_id !== 'string') {
       throw new Error(`dynamic client registration failed with HTTP ${response.status}`)
     }
-    await writeCredential(CLIENT_ID_REF, JSON.stringify({ redirectUri, clientId: payload.client_id }))
+    await writeCredential(CLIENT_ID_REF, JSON.stringify({ redirectUri, clientId: payload.client_id, scope: settings.scope }))
     return payload.client_id
   }
 
@@ -482,11 +543,11 @@ export function apply(ctx, config) {
         signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS),
       })
     } catch (error) {
-      throw new Error(fetchFailure('the Bisibility token endpoint', TOKEN_TIMEOUT_MS, error))
+      throw new Error(fetchFailure('the bisibility token endpoint', TOKEN_TIMEOUT_MS, error))
     }
     const payload = await response.json().catch(() => null)
     if (!response.ok || payload === null || typeof payload.access_token !== 'string') {
-      throw new Error(`token exchange failed with HTTP ${response.status}`)
+      throw new Error(`token exchange failed with HTTP ${response.status}${oauthErrorDetail(payload)}`)
     }
     state.accessToken = payload.access_token
     state.expiresAt = Date.now() + (Number.isFinite(payload.expires_in) ? payload.expires_in : 3600) * 1000
@@ -546,7 +607,7 @@ export function apply(ctx, config) {
       }
       const payload = await response.json().catch(() => null)
       if (!response.ok || payload === null || typeof payload.access_token !== 'string') {
-        const failure = new Error(`token refresh failed with HTTP ${response.status}`)
+        const failure = new Error(`token refresh failed with HTTP ${response.status}${oauthErrorDetail(payload)}`)
         failure.status = response.status
         throw failure
       }
@@ -592,6 +653,28 @@ export function apply(ctx, config) {
       }
       state.error = reason
       return false
+    }
+  }
+
+  /** When the market index was last read, in epoch milliseconds. */
+  let updateCheckedAt = 0
+
+  /**
+   * Read the plugin market index for a newer release, at most every few
+   * hours. A failure stays silent: the panel simply shows no update.
+   */
+  const checkForUpdate = async () => {
+    if (manifest === null || typeof manifest.name !== 'string' || Date.now() - updateCheckedAt < UPDATE_CHECK_INTERVAL_MS) return
+    updateCheckedAt = Date.now()
+    try {
+      const response = await fetch(MARKET_INDEX_URL, {
+        headers: { accept: 'application/json' },
+        signal: AbortSignal.timeout(UPDATE_CHECK_TIMEOUT_MS),
+      })
+      if (!response.ok) return
+      state.latestVersion = latestMarketVersion(await response.json(), manifest.name)
+    } catch (error) {
+      /* offline or unpublished: no update notice */
     }
   }
 
@@ -758,6 +841,7 @@ export function apply(ctx, config) {
     stale: fingerprint() !== loadedFingerprint,
     updateRequired: state.updateRequired,
     minVersion: state.minVersion,
+    updateAvailable: version !== null && compareVersions(state.latestVersion, version) > 0 ? state.latestVersion : null,
     error: state.error,
   })
 
@@ -767,7 +851,7 @@ export function apply(ctx, config) {
    * @returns the authorization URL.
    */
   const beginFlow = async (external) => {
-    const clientId = await ensureClientId()
+    const clientId = await ensureClientId(true)
     state.error = null
     const verifier = base64url(randomBytes(32))
     const challenge = base64url(createHash('sha256').update(verifier).digest())
@@ -878,11 +962,11 @@ export function apply(ctx, config) {
             state.error = description
             ctx.logger?.info?.(`bisibility: sign-in ended with ${error}`)
             sendPage(res, 400, {
-              title: error === 'access_denied' ? 'Sign-in was cancelled' : 'Bisibility reported an error',
+              title: error === 'access_denied' ? 'Sign-in was cancelled' : 'bisibility reported an error',
               detail:
                 error === 'access_denied'
-                  ? 'Nothing changed in DeepSeek Harness. You can start again from the Bisibility panel.'
-                  : `${description}. You can start again from the Bisibility panel.`,
+                  ? 'Nothing changed in DeepSeek Harness. You can start again from the bisibility panel.'
+                  : `${description}. You can start again from the bisibility panel.`,
               ...(external ? {} : { returnTo: '/' }),
             })
             return
@@ -897,7 +981,7 @@ export function apply(ctx, config) {
             sendPage(res, 400, {
               title: 'This sign-in link is no longer valid',
               detail:
-                'It expires after 15 minutes, and it also stops working if DeepSeek Harness restarts while you are signing in. Return to the Bisibility panel and press Connect account again.',
+                'It expires after 15 minutes, and it also stops working if DeepSeek Harness restarts while you are signing in. Return to the bisibility panel and press Connect account again.',
               returnTo: '/',
             })
             return
@@ -906,7 +990,7 @@ export function apply(ctx, config) {
           try {
             await completeAuthorization(code, pending.verifier)
             sendPage(res, 200, {
-              title: 'Bisibility is connected',
+              title: 'bisibility is connected',
               detail: external
                 ? 'You can close this browser tab and return to DeepSeek Harness.'
                 : 'Returning to DeepSeek Harness...',
@@ -916,8 +1000,8 @@ export function apply(ctx, config) {
             state.error = messageOf(failure)
             ctx.logger?.warn?.(`bisibility: token exchange failed: ${state.error}`)
             sendPage(res, 502, {
-              title: 'Bisibility could not finish the sign-in',
-              detail: `${state.error}. You can start again from the Bisibility panel.`,
+              title: 'bisibility could not finish the sign-in',
+              detail: `${state.error}. You can start again from the bisibility panel.`,
               ...(external ? {} : { returnTo: '/' }),
             })
           }
@@ -937,10 +1021,12 @@ export function apply(ctx, config) {
             sendJson(res, 405, { error: 'method not allowed' })
             return
           }
-          // Opening the panel or pressing Refresh retries a reconnect, waiting
-          // briefly so a quick success shows in this answer.
-          const attempt = reconnect()
-          if (attempt !== null) await Promise.race([attempt, new Promise((resolve) => setTimeout(resolve, STATUS_RECONNECT_WAIT_MS))])
+          // Opening the panel or pressing Refresh retries a reconnect and the
+          // update check, waiting briefly so a quick answer shows at once.
+          const work = [reconnect(), checkForUpdate()].filter((attempt) => attempt !== null)
+          let timer
+          await Promise.race([Promise.all(work), new Promise((resolve) => (timer = setTimeout(resolve, STATUS_RECONNECT_WAIT_MS)))])
+          clearTimeout(timer)
           sendJson(res, 200, status())
         },
       }),
@@ -981,7 +1067,7 @@ export function apply(ctx, config) {
           }
           if (!restored) await reconnect()
           if (!(await ensureAccessToken())) {
-            sendJson(res, 401, { error: 'Bisibility is not connected' })
+            sendJson(res, 401, { error: 'bisibility is not connected' })
             return
           }
           try {
@@ -1026,7 +1112,7 @@ export function apply(ctx, config) {
             const timedOut = (error instanceof Error && error.name === 'TimeoutError') || /aborted due to timeout/i.test(text)
             if (timedOut) {
               const deadline = Math.round((settings.toolCallTimeoutMs + PROXY_GRACE_MS) / 1000)
-              state.error = `the Bisibility MCP endpoint did not answer within ${deadline}s`
+              state.error = `the bisibility MCP endpoint did not answer within ${deadline}s`
               sendJson(res, 504, { error: state.error })
               return
             }
@@ -1034,7 +1120,7 @@ export function apply(ctx, config) {
               sendJson(res, 502, { error: 'the MCP call was cancelled' })
               return
             }
-            state.error = fetchFailure('the Bisibility MCP request', settings.toolCallTimeoutMs + PROXY_GRACE_MS, error)
+            state.error = fetchFailure('the bisibility MCP request', settings.toolCallTimeoutMs + PROXY_GRACE_MS, error)
             sendJson(res, 502, { error: state.error })
           }
         },

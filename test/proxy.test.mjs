@@ -108,7 +108,7 @@ test('a network failure names the request and its cause, and the next success cl
   const { call, status, restore } = await harness(answer);
   try {
     assert.equal((await call('/bisibility/mcp', 'POST', rpc)).statusCode, 502);
-    assert.equal((await status()).error, 'the Bisibility MCP request failed: fetch failed (ECONNRESET)');
+    assert.equal((await status()).error, 'the bisibility MCP request failed: fetch failed (ECONNRESET)');
     answer.current = listed;
     assert.equal((await call('/bisibility/mcp', 'POST', rpc)).statusCode, 200);
     assert.equal((await status()).error, null);

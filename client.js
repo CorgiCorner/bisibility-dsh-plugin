@@ -14,8 +14,10 @@ window.__ModuleLoader__.load({
     const STATUS_URL = '/bisibility/oauth/status';
     const OPEN_URL = '/bisibility/oauth/open';
     const DISCONNECT_URL = '/bisibility/oauth/disconnect';
-    /** Public documentation root. */
-    const DOCS_URL = 'https://bisibility.com/docs';
+    /** The plugin's page on the product site. */
+    const DOCS_URL = 'https://bisibility.com/integrations/deepseek-harness';
+    /** Troubleshooting section of the public README. */
+    const TROUBLESHOOTING_URL = 'https://github.com/CorgiCorner/bisibility-dsh-plugin#troubleshooting';
     /** Product site. */
     const SITE_URL = 'https://bisibility.com';
     /** How often the panel re-reads status while a sign-in is in flight. */
@@ -24,88 +26,92 @@ window.__ModuleLoader__.load({
     const PENDING_LIMIT_MS = 5 * 60 * 1000;
 
     const en = {
-      panel: 'Bisibility',
-      title: 'Bisibility',
+      panel: 'bisibility',
+      title: 'bisibility',
       subtitle: 'Rank tracking, keyword research, backlinks, and AI visibility inside DeepSeek Harness.',
       refresh: 'Refresh',
       'status.checking': 'Checking the connection...',
-      'status.unreachable': 'The Bisibility plugin is not responding',
+      'status.unreachable': 'The bisibility plugin is not responding',
       'status.unreachableDetail': 'The Host routes of this bundle did not answer. Reinstall the bundle or restart DSH.',
       'status.idle': 'Not connected',
-      'status.idleDetail': 'Sign in once; Bisibility tools then appear in this harness without an API key.',
+      'status.idleDetail': 'Sign in once; bisibility tools then appear in this harness without an API key.',
       'status.pending': 'Waiting for sign-in',
-      'status.pendingDetail': 'Finish the sign-in in your browser. If Bisibility showed its dashboard, press Connect account again to finish.',
+      'status.pendingDetail': 'Finish the sign-in in your browser. If bisibility showed its dashboard, press Connect account again to finish.',
       'status.connected': 'Connected',
-      'status.connectedDetail': 'The agent can call Bisibility tools, named mcp__bisibility__<tool>.',
+      'status.connectedDetail': 'The agent can call bisibility tools, named mcp__bisibility__<tool>.',
       'status.failed': 'Not connected',
       'status.failedDetail': 'The last attempt did not finish. The detail below comes from the harness; press Connect account to try again.',
       'status.mcpFailed': 'Connected, but the MCP client did not start',
       'status.mcpFailedDetail': 'The Host reported a mount failure; the detail below comes from the harness.',
-      'connect.title': 'Sign in with Bisibility',
-      'connect.body': 'Connect opens Bisibility in your browser. If it shows its dashboard after you sign in, you are signed in now: press Connect account once more to finish. Tokens stay in the harness credential store, never in a config file or an environment variable.',
+      'connect.title': 'Sign in with bisibility',
+      'connect.body': 'Connect opens bisibility in your browser. If it shows its dashboard after you sign in, you are signed in now: press Connect account once more to finish. Tokens stay in the harness credential store, never in a config file or an environment variable.',
       'connect.action': 'Connect account',
-      'connect.working': 'Opening Bisibility...',
+      'connect.working': 'Opening bisibility...',
       'connected.account': 'Signed in as {account}',
       'connected.renews': 'Access renews automatically on use.',
       'connected.expires': 'Access expires {when}; connect again to renew.',
       'connected.disconnect': 'Disconnect',
-      'conversation.new': 'New Bisibility conversation',
+      'conversation.new': 'New bisibility conversation',
       'update.stale': 'New plugin code is on disk. Reinstall the bundle to load it.',
       'update.openPlugins': 'Open Plugins',
       'update.reload': 'Reload page',
       'update.required': 'Update required',
-      'update.requiredVersion': 'Bisibility now needs version {version} or newer of this plugin. Update it on the Plugins page, then reload this page.',
-      'update.requiredDetail': 'Bisibility no longer accepts this version of the plugin. Update it on the Plugins page, then reload this page.',
+      'update.requiredVersion': 'bisibility now needs version {version} or newer of this plugin. Update it on the Plugins page, then quit and reopen DeepSeek Harness.',
+      'update.requiredDetail': 'bisibility no longer accepts this version of the plugin. Update it on the Plugins page, then quit and reopen DeepSeek Harness.',
       'connected.disconnecting': 'Disconnecting...',
       'tools.title': 'What the agent gets',
       'tools.projects': 'Projects, keywords, and rank checks for every tracked project.',
       'tools.analytics': 'Backlink profiles, traffic snapshots, and Domain Overview estimates.',
       'tools.visibility': 'AI visibility and prompt research across answer engines.',
       'tools.scope': 'Read-only access unless the authorization grants writes.',
-      docs: 'Documentation',
+      'update.available': 'bisibility {version} is available. Install it from Discover on the Plugins page, then quit and reopen DeepSeek Harness.',
+      docs: 'Plugin guide',
+      troubleshooting: 'Troubleshooting',
       site: 'bisibility.com',
     };
 
     const zh = {
-      panel: 'Bisibility',
-      title: 'Bisibility',
+      panel: 'bisibility',
+      title: 'bisibility',
       subtitle: '在 DeepSeek Harness 内进行排名跟踪、关键词研究、外链分析和 AI 可见度检查。',
       refresh: '刷新',
       'status.checking': '正在检查连接…',
-      'status.unreachable': 'Bisibility 插件无响应',
+      'status.unreachable': 'bisibility 插件无响应',
       'status.unreachableDetail': '此捆绑包的 Host 路由没有响应。请重新安装捆绑包或重启 DSH。',
       'status.idle': '未连接',
-      'status.idleDetail': '登录一次即可使用 Bisibility 工具，无需 API 密钥。',
+      'status.idleDetail': '登录一次即可使用 bisibility 工具，无需 API 密钥。',
       'status.pending': '等待登录',
-      'status.pendingDetail': '请在浏览器中完成登录。如果 Bisibility 显示了仪表板，请再次点击“连接账户”以完成连接。',
+      'status.pendingDetail': '请在浏览器中完成登录。如果 bisibility 显示了仪表板，请再次点击“连接账户”以完成连接。',
       'status.connected': '已连接',
-      'status.connectedDetail': '智能体可以调用名为 mcp__bisibility__<tool> 的 Bisibility 工具。',
+      'status.connectedDetail': '智能体可以调用名为 mcp__bisibility__<tool> 的 bisibility 工具。',
       'status.failed': '未连接',
       'status.failedDetail': '上一次尝试没有完成。下面的详细信息来自 harness；请再次点击“连接账户”。',
       'status.mcpFailed': '已连接，但 MCP 客户端未能启动',
       'status.mcpFailedDetail': 'Host 报告了挂载失败；下面的详细信息来自 harness。',
-      'connect.title': '使用 Bisibility 登录',
-      'connect.body': '连接会在浏览器中打开 Bisibility。如果登录后显示的是仪表板，说明你已登录：再次点击“连接账户”即可完成。令牌只保存在 harness 凭据存储中，不会写入配置文件或环境变量。',
+      'connect.title': '使用 bisibility 登录',
+      'connect.body': '连接会在浏览器中打开 bisibility。如果登录后显示的是仪表板，说明你已登录：再次点击“连接账户”即可完成。令牌只保存在 harness 凭据存储中，不会写入配置文件或环境变量。',
       'connect.action': '连接账户',
-      'connect.working': '正在打开 Bisibility…',
+      'connect.working': '正在打开 bisibility…',
       'connected.account': '已登录：{account}',
       'connected.renews': '访问令牌会在使用时自动续期。',
       'connected.expires': '访问令牌将于 {when} 到期；请重新连接以续期。',
       'connected.disconnect': '断开连接',
-      'conversation.new': '新建 Bisibility 对话',
+      'conversation.new': '新建 bisibility 对话',
       'update.stale': '磁盘上有新的插件代码，请重新安装捆绑包以加载它。',
       'update.openPlugins': '打开插件页',
       'update.reload': '刷新页面',
       'update.required': '需要更新',
-      'update.requiredVersion': 'Bisibility 现在需要此插件 {version} 或更高版本。请在插件页更新，然后刷新本页面。',
-      'update.requiredDetail': 'Bisibility 不再接受此插件版本。请在插件页更新，然后刷新本页面。',
+      'update.requiredVersion': 'bisibility 现在需要此插件 {version} 或更高版本。请在插件页更新，然后退出并重新打开 DeepSeek Harness。',
+      'update.requiredDetail': 'bisibility 不再接受此插件版本。请在插件页更新，然后退出并重新打开 DeepSeek Harness。',
       'connected.disconnecting': '正在断开…',
       'tools.title': '智能体可以使用',
       'tools.projects': '所有跟踪项目的项目、关键词和排名检查。',
       'tools.analytics': '外链概况、流量快照和 Domain Overview 估算。',
       'tools.visibility': '跨答案引擎的 AI 可见度和提示词研究。',
       'tools.scope': '除非授权包含写入，否则仅提供只读访问。',
-      docs: '文档',
+      'update.available': 'bisibility {version} 已发布。请在插件页的 Discover 中安装，然后退出并重新打开 DeepSeek Harness。',
+      docs: '插件指南',
+      troubleshooting: '故障排除',
       site: 'bisibility.com',
     };
 
@@ -395,6 +401,8 @@ window.__ModuleLoader__.load({
       const stale = snapshot !== null && snapshot.stale === true;
       const updateRequired = snapshot !== null && snapshot.updateRequired === true;
       const minVersion = snapshot !== null && typeof snapshot.minVersion === 'string' ? snapshot.minVersion : null;
+      const updateAvailable =
+        snapshot !== null && typeof snapshot.updateAvailable === 'string' ? snapshot.updateAvailable : null;
 
       return h(
         'section',
@@ -516,6 +524,22 @@ window.__ModuleLoader__.load({
                   ),
                 )
               : null,
+            !updateRequired && updateAvailable !== null
+              ? h(
+                  'div',
+                  { className: 'bis-notice' },
+                  h('p', { className: 'bis-statusDetail' }, t('update.available', { version: updateAvailable })),
+                  h(
+                    'div',
+                    { className: 'bis-actions' },
+                    h(
+                      'button',
+                      { type: 'button', className: 'bis-button bis-primary', onClick: openPlugins },
+                      t('update.openPlugins'),
+                    ),
+                  ),
+                )
+              : null,
             stale
               ? h(
                   'div',
@@ -537,12 +561,14 @@ window.__ModuleLoader__.load({
                   ),
                 )
               : null,
-            h(
-              'section',
-              { className: 'bis-section' },
-              h('h2', { className: 'bis-h2' }, t('connect.title')),
-              h('p', { className: 'bis-copy' }, t('connect.body')),
-            ),
+            connected
+              ? null
+              : h(
+                  'section',
+                  { className: 'bis-section' },
+                  h('h2', { className: 'bis-h2' }, t('connect.title')),
+                  h('p', { className: 'bis-copy' }, t('connect.body')),
+                ),
             h(
               'section',
               { className: 'bis-section' },
@@ -563,6 +589,11 @@ window.__ModuleLoader__.load({
                 'a',
                 { className: 'bis-link', href: DOCS_URL, target: '_blank', rel: 'noreferrer noopener' },
                 t('docs'),
+              ),
+              h(
+                'a',
+                { className: 'bis-link', href: TROUBLESHOOTING_URL, target: '_blank', rel: 'noreferrer noopener' },
+                t('troubleshooting'),
               ),
               h(
                 'a',

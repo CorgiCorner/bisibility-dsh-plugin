@@ -8,7 +8,7 @@ const source = resolve('.');
 function fixture(fn) {
   const root = mkdtempSync(join(tmpdir(), 'dsh-check-'));
   try {
-    for (const path of ['scripts/check.mjs', 'locale', 'index.js', 'client.js', 'package.json', 'cordis.patch.yml']) cpSync(join(source, path), join(root, path), { recursive: true });
+    for (const path of ['scripts/check.mjs', 'locale', 'index.js', 'client.js', 'package.json', 'cordis.patch.yml', 'README.md']) cpSync(join(source, path), join(root, path), { recursive: true });
     symlinkSync(join(source, 'node_modules'), join(root, 'node_modules'));
     const run = () => spawnSync(process.execPath, [join(root, 'scripts/check.mjs')], { encoding: 'utf8' });
     fn(root, run);
@@ -20,4 +20,5 @@ test('check rejects locale mismatch', () => fixture((root, run) => { writeFileSy
 test('check rejects client locale mismatch', () => fixture((root, run) => { const p = join(root, 'client.js'); writeFileSync(p, readFileSync(p, 'utf8').replace("'update.required': '需要更新',", '')); assert.notEqual(run().status, 0); }));
 test('check rejects wrong patch name', () => fixture((root, run) => { const p = join(root, 'cordis.patch.yml'); writeFileSync(p, readFileSync(p, 'utf8').replace('@bisibility/dsh-plugin', '@example/wrong')); assert.notEqual(run().status, 0); }));
 test('check rejects a stale client module id', () => fixture((root, run) => { const p = join(root, 'client.js'); writeFileSync(p, readFileSync(p, 'utf8').replace("id: '@bisibility/dsh-plugin'", "id: '@local/bisibility'")); assert.notEqual(run().status, 0); }));
+test('check rejects a README pinned to another version', () => fixture((root, run) => { const p = join(root, 'README.md'); writeFileSync(p, readFileSync(p, 'utf8').replace(/\.git#v\d+\.\d+\.\d+/, '.git#v0.0.1')); assert.notEqual(run().status, 0); }));
 test('check rejects invalid DSH range', () => fixture((root, run) => { const p = join(root, 'package.json'); const pkg = JSON.parse(readFileSync(p)); pkg.engines.dsh = 'invalid'; writeFileSync(p, JSON.stringify(pkg)); assert.notEqual(run().status, 0); }));

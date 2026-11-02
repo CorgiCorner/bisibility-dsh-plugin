@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 - 2026-11-02
+
+- The sign-in now survives restarts: after DeepSeek Harness starts on a new port, the plugin refreshes with its original OAuth client instead of failing with HTTP 400 and signing you out.
+- Once connected, the panel hides the sign-in help and, after your next sign-in, shows the signed-in account.
+- The panel shows when a newer version is available in the plugin market and links to the Plugins page.
+- Sign-in and refresh errors include the error code and description bisibility returned.
+- Update notices say to quit and reopen DeepSeek Harness, and the panel links to the plugin guide and troubleshooting.
+
 ## 0.2.1 - 2026-11-02
 
 - After a restart the panel reconnects from the stored sign-in instead of showing Not connected, and Refresh retries a sign-in refresh that failed while offline.

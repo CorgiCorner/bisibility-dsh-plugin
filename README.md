@@ -23,26 +23,42 @@ key to paste, no token in a config file.
 
 ## Install
 
-In Plugins, select More beside Experimental plugins and enable Custom plugin
-markets. Open Discover, select Add index source, and enter:
+**From the plugin market (recommended, shows updates).** In Plugins, select More beside
+Experimental plugins and enable Custom plugin markets. Open Discover, select Add index
+source, and enter:
 
+```text
 https://corgicorner.github.io/bisibility-dsh-plugin/index.json
-
-Select Bisibility and confirm the source and commit to install. The market index
-becomes available after the first public release.
-
-Alternatively install a specific release commit using the CLI or Add plugin dialog:
-
-```sh
-dsh plugin add github:CorgiCorner/bisibility-dsh-plugin#<commit-sha>
 ```
+
+Select bisibility and confirm the source and commit to install. The index URL goes into
+Add index source, not into Add plugin.
+
+**With Add plugin.** Paste this release, pinned to its tag:
+
+```text
+git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.2
+```
+
+Without a tag, the address installs the latest release:
+
+```text
+git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git
+```
+
+The same addresses work with the CLI, for example
+`dsh plugin add git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.2`.
+
+After installing, quit and reopen DeepSeek Harness, then select Connect account in the
+bisibility panel.
 
 ## Updates and rollback
 
-The market shows an update when a newer compatible version is available. Install
-the chosen version from the card; choose an older version in the Versions list to
-roll back. For a Git install, remove the existing plugin and add the new pinned
-commit. Release notes say what each update needs.
+The panel and the market show when a newer version is available; the panel reads the
+market index at most every six hours. Install the chosen
+version from the market card; choose an older version in the Versions list to roll back.
+For an Add plugin install, remove the plugin and add the address of the new tag. Release
+notes say what each update needs.
 
 After installing or updating, quit and reopen DeepSeek Harness. The desktop app has
 no reload shortcut, and the sidebar entry and Host code load at startup. Your

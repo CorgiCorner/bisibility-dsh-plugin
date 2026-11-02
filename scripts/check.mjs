@@ -20,6 +20,8 @@ const row = read('cordis.patch.yml').match(/- id:\s*bisibility\s*\n\s*name:\s*['
 if (!row || row[1] !== pkg.name) throw Error('Plugin row does not match package name');
 const client = read('client.js').match(/__ModuleLoader__\.load\(\{\s*id:\s*['"]([^'"]+)['"]/);
 if (!client || client[1] !== pkg.name) throw Error('Client module id does not match package name');
+const pinned = [...read('README.md').matchAll(/bisibility-dsh-plugin\.git#v(\d+\.\d+\.\d+)/g)].map((match) => match[1]);
+if (pinned.length === 0 || pinned.some((value) => value !== pkg.version)) throw Error(`README install commands must pin v${pkg.version}`);
 if (typeof pkg.engines?.dsh !== 'string' || !pkg.engines.dsh.trim() || semver.validRange(pkg.engines.dsh) === null) throw Error('Invalid engines.dsh');
 const args = process.argv.slice(2);
 if (args.length) {
