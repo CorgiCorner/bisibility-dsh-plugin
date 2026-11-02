@@ -1,0 +1,24 @@
+# Bisibility for DeepSeek Harness.
+#
+# One row: the left-sidebar panel. Its Host half owns the Bisibility OAuth
+# authorization (dynamic client registration, PKCE, refresh tokens), serves the
+# loopback MCP proxy, and mounts @deepseek-ai/dsh-mcp-client on that proxy only
+# once a token exists. No API key and no environment variable are involved, and
+# no token is written into this patch.
+- insert:
+    - id: bisibility
+      name: '@bisibility/dsh-plugin'
+
+    # A named conversation preset. Sessions started from the panel use it, so the
+    # chat is visibly marked "Bisibility" and records that preset in its log.
+    # The composition is empty on purpose: the host already provides the agent
+    # loop, tools, skills and prompt sections, and this bundle adds the MCP
+    # client at runtime. Duplicating the shipped standard rows here would drift.
+    - id: preset-bisibility
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: bisibility
+        name: Bisibility
+        description: Bisibility tools for SEO and AI visibility work.
+        order: 20
+        plugins: []

@@ -1,0 +1,63 @@
+{
+  "name": "@bisibility/dsh-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bisibility panel in the left sidebar plus the Bisibility MCP connection it manages",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.png"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.png"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  },
+  "license": "Apache-2.0",
+  "homepage": "https://bisibility.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git"
+  },
+  "engines": {
+    "dsh": ">=0.2.1-rc.5 <0.3.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "22.23.1",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=10.9.3 <11",
+      "onFail": "error"
+    }
+  },
+  "packageManager": "npm@10.9.3",
+  "scripts": {
+    "check:node": "node tools/check-node.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "semver": "^7.8.5"
+  }
+}
