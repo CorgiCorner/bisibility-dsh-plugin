@@ -68,6 +68,9 @@ const USERINFO_TIMEOUT_MS = 10000
  */
 const PROXY_GRACE_MS = 30000
 
+/** How long a status read waits for a reconnect attempt before answering. */
+const STATUS_RECONNECT_WAIT_MS = 5000
+
 /** Request header that tells the MCP server which client and version calls it. */
 const CLIENT_HEADER = 'x-bisibility-client'
 
@@ -592,14 +595,49 @@ export function apply(ctx, config) {
     }
   }
 
+  /** Whether the credential store has been read; it can become available after this plugin starts. */
+  let restored = false
+
   /**
-   * Restore a previous authorization from the credential store at boot.
+   * Restore a previous authorization from the credential store. Without an
+   * available store this leaves `restored` false, so a later call retries.
    */
   const restore = async () => {
-    const stored = await readCredential(REFRESH_TOKEN_REF)
-    if (stored === null) return
-    state.refreshToken = stored
+    const store = credentials()
+    if (store === undefined || store === null) return
+    let resolved
+    try {
+      resolved = await store.resolve(REFRESH_TOKEN_REF)
+    } catch (error) {
+      return
+    }
+    restored = true
+    if (resolved === null || resolved === undefined || typeof resolved.value !== 'string') return
+    state.refreshToken = resolved.value
     await ensureAccessToken()
+  }
+
+  /** The reconnect attempt in flight, shared by concurrent callers. */
+  let reconnecting = null
+
+  /**
+   * Finish what boot could not: read the stored authorization once the
+   * credential store is available, or refresh a kept token after a transient
+   * failure. Without this, a restart that races the store, or a refresh that
+   * fails while offline, leaves the panel signed out until a new sign-in.
+   * @returns the attempt, or null when there is nothing to do.
+   */
+  const reconnect = () => {
+    if (reconnecting !== null) return reconnecting
+    if (state.accessToken !== null || (restored && state.refreshToken === null)) return null
+    reconnecting = (restored ? ensureAccessToken() : restore())
+      .catch((error) => {
+        state.error = messageOf(error)
+      })
+      .finally(() => {
+        reconnecting = null
+      })
+    return reconnecting
   }
 
   /**
@@ -899,6 +937,10 @@ export function apply(ctx, config) {
             sendJson(res, 405, { error: 'method not allowed' })
             return
           }
+          // Opening the panel or pressing Refresh retries a reconnect, waiting
+          // briefly so a quick success shows in this answer.
+          const attempt = reconnect()
+          if (attempt !== null) await Promise.race([attempt, new Promise((resolve) => setTimeout(resolve, STATUS_RECONNECT_WAIT_MS))])
           sendJson(res, 200, status())
         },
       }),
@@ -937,6 +979,7 @@ export function apply(ctx, config) {
             sendJson(res, 403, { error: 'browser requests are not accepted by the MCP proxy' })
             return
           }
+          if (!restored) await reconnect()
           if (!(await ensureAccessToken())) {
             sendJson(res, 401, { error: 'Bisibility is not connected' })
             return
@@ -1000,8 +1043,6 @@ export function apply(ctx, config) {
   )
 
   // Restore a previous authorization, and own the mounted client's disposal.
-  void restore().catch((error) => {
-    state.error = messageOf(error)
-  })
+  void reconnect()
   ctx.effect(() => () => unmountMcp(), 'bisibility: MCP client')
 }

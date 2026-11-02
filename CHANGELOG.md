@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 - 2026-11-02
+
+- After a restart the panel reconnects from the stored sign-in instead of showing Not connected, and Refresh retries a sign-in refresh that failed while offline.
+
 ## 0.2.0 - 2026-11-02
 
 - The MCP connection now tells bisibility which plugin version is calling, so the service can ask for an update before a breaking change. After updating, quit and reopen DeepSeek Harness.

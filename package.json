@@ -1,6 +1,6 @@
 {
   "name": "@bisibility/dsh-plugin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "Bisibility panel in the left sidebar plus the Bisibility MCP connection it manages",
