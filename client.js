@@ -53,6 +53,9 @@ window.__ModuleLoader__.load({
       'update.stale': 'New plugin code is on disk. Reinstall the bundle to load it.',
       'update.openPlugins': 'Open Plugins',
       'update.reload': 'Reload page',
+      'update.required': 'Update required',
+      'update.requiredVersion': 'Bisibility now needs version {version} or newer of this plugin. Update it on the Plugins page, then reload this page.',
+      'update.requiredDetail': 'Bisibility no longer accepts this version of the plugin. Update it on the Plugins page, then reload this page.',
       'connected.disconnecting': 'Disconnecting...',
       'tools.title': 'What the agent gets',
       'tools.projects': 'Projects, keywords, and rank checks for every tracked project.',
@@ -93,6 +96,9 @@ window.__ModuleLoader__.load({
       'update.stale': '磁盘上有新的插件代码，请重新安装捆绑包以加载它。',
       'update.openPlugins': '打开插件页',
       'update.reload': '刷新页面',
+      'update.required': '需要更新',
+      'update.requiredVersion': 'Bisibility 现在需要此插件 {version} 或更高版本。请在插件页更新，然后刷新本页面。',
+      'update.requiredDetail': 'Bisibility 不再接受此插件版本。请在插件页更新，然后刷新本页面。',
       'connected.disconnecting': '正在断开…',
       'tools.title': '智能体可以使用',
       'tools.projects': '所有跟踪项目的项目、关键词和排名检查。',
@@ -226,6 +232,9 @@ window.__ModuleLoader__.load({
         return { state: 'warn', title: t('status.checking'), detail: null };
       }
       if (snapshot.connected === true) {
+        if (snapshot.updateRequired === true) {
+          return { state: 'error', title: t('update.required'), detail: null };
+        }
         if (snapshot.mcp === 'failed') {
           return { state: 'error', title: t('status.mcpFailed'), detail: t('status.mcpFailedDetail') };
         }
@@ -384,6 +393,8 @@ window.__ModuleLoader__.load({
       const hostError = snapshot !== null && typeof snapshot.error === 'string' ? snapshot.error : null;
       const version = snapshot !== null && typeof snapshot.version === 'string' ? snapshot.version : null;
       const stale = snapshot !== null && snapshot.stale === true;
+      const updateRequired = snapshot !== null && snapshot.updateRequired === true;
+      const minVersion = snapshot !== null && typeof snapshot.minVersion === 'string' ? snapshot.minVersion : null;
 
       return h(
         'section',
@@ -483,6 +494,28 @@ window.__ModuleLoader__.load({
                 ),
               ),
             ),
+            updateRequired
+              ? h(
+                  'div',
+                  { className: 'bis-notice', role: 'alert' },
+                  h(
+                    'p',
+                    { className: 'bis-statusDetail' },
+                    minVersion === null
+                      ? t('update.requiredDetail')
+                      : t('update.requiredVersion', { version: minVersion }),
+                  ),
+                  h(
+                    'div',
+                    { className: 'bis-actions' },
+                    h(
+                      'button',
+                      { type: 'button', className: 'bis-button bis-primary', onClick: openPlugins },
+                      t('update.openPlugins'),
+                    ),
+                  ),
+                )
+              : null,
             stale
               ? h(
                   'div',

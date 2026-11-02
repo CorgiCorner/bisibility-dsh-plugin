@@ -92,6 +92,10 @@ This bundle closes that gap without forking the client:
    or `Sec-Fetch-Site` header are refused, so a web page cannot drive paid tools
    through the proxy. The other OAuth routes, except the callback, require the
    DeepSeek Harness session and answer 401 without it.
+5. Each forwarded request carries `X-Bisibility-Client:
+   bisibility-dsh-plugin/<version>`. When Bisibility answers `426` because the
+   installed version is below its minimum, the panel shows Update required with
+   that minimum and a button to the Plugins page.
 
 If you sign in from a signed-out browser, Bisibility may land on its dashboard
 instead of returning to the harness. You are signed in at that point; press

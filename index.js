@@ -68,6 +68,15 @@ const USERINFO_TIMEOUT_MS = 10000
  */
 const PROXY_GRACE_MS = 30000
 
+/** Request header that tells the MCP server which client and version calls it. */
+const CLIENT_HEADER = 'x-bisibility-client'
+
+/** Response header that repeats the minimum version of a `426` answer. */
+const MIN_VERSION_HEADER = 'x-bisibility-min-version'
+
+/** A version the bridge accepts from the server. */
+const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
+
 /**
  * Read the deployment overrides this bundle accepts from its patch row.
  * @param config - the row config, or undefined when the row declares none.
@@ -109,7 +118,9 @@ function fetchFailure(label, timeoutMs, error) {
   if ((error instanceof Error && error.name === 'TimeoutError') || /aborted due to timeout/i.test(text)) {
     return `${label} did not answer within ${seconds}s`
   }
-  return `${label} failed: ${text}`
+  // Node reports every network failure as a bare "fetch failed"; the cause names it.
+  const code = error instanceof Error && typeof error.cause?.code === 'string' ? error.cause.code : null
+  return `${label} failed: ${text}${code === null ? '' : ` (${code})`}`
 }
 
 /**
@@ -183,6 +194,24 @@ function sendPage(res, status, page) {
 }
 
 /**
+ * Read the minimum plugin version from an upstream `426` answer.
+ * @param text - the response body.
+ * @param headers - the response headers.
+ * @returns the version, or null when the answer names none.
+ */
+function minVersionOf(text, headers) {
+  try {
+    const payload = JSON.parse(text)
+    const value = payload?.error?.data?.minVersion ?? payload?.minVersion
+    if (typeof value === 'string' && VERSION_PATTERN.test(value)) return value
+  } catch (error) {
+    /* a body that is not JSON may still carry the header */
+  }
+  const header = headers.get(MIN_VERSION_HEADER)
+  return header !== null && VERSION_PATTERN.test(header) ? header : null
+}
+
+/**
  * Read a bounded request body.
  * @param req - the HTTP request.
  * @returns the body bytes.
@@ -232,6 +261,7 @@ export function apply(ctx, config) {
     }
   })()
   const version = manifest !== null && typeof manifest.version === 'string' ? manifest.version : null
+  const clientHeader = version === null ? null : `bisibility-dsh-plugin/${version}`
   const codeFiles = ['index.js', 'client.js', 'cordis.patch.yml']
   const fingerprint = () =>
     codeFiles
@@ -256,6 +286,8 @@ export function apply(ctx, config) {
     mcp: 'none',
     error: null,
     refreshing: null,
+    updateRequired: false,
+    minVersion: null,
   }
 
   /**
@@ -686,6 +718,8 @@ export function apply(ctx, config) {
     mcp: state.mcp,
     version,
     stale: fingerprint() !== loadedFingerprint,
+    updateRequired: state.updateRequired,
+    minVersion: state.minVersion,
     error: state.error,
   })
 
@@ -913,6 +947,7 @@ export function apply(ctx, config) {
             if (typeof req.headers['content-type'] === 'string') headers['content-type'] = req.headers['content-type']
             if (typeof req.headers['mcp-protocol-version'] === 'string') headers['mcp-protocol-version'] = req.headers['mcp-protocol-version']
             if (typeof req.headers['mcp-session-id'] === 'string') headers['mcp-session-id'] = req.headers['mcp-session-id']
+            if (clientHeader !== null) headers[CLIENT_HEADER] = clientHeader
             const upstream = await fetch(settings.resource, {
               method: req.method,
               headers,
@@ -925,6 +960,18 @@ export function apply(ctx, config) {
               const value = upstream.headers.get(name)
               if (value !== null) res.setHeader(name, value)
             }
+            // The server refuses this version until the user updates. Remember
+            // the floor for the panel and pass the answer on unchanged, so the
+            // MCP client reports the same message.
+            if (upstream.status === 426) {
+              const text = await upstream.text()
+              state.updateRequired = true
+              state.minVersion = minVersionOf(text, upstream.headers)
+              res.end(text)
+              return
+            }
+            state.updateRequired = false
+            state.minVersion = null
             if (upstream.body !== null) {
               res.flushHeaders?.()
               for await (const chunk of upstream.body) res.write(chunk)
@@ -944,7 +991,7 @@ export function apply(ctx, config) {
               sendJson(res, 502, { error: 'the MCP call was cancelled' })
               return
             }
-            state.error = text
+            state.error = fetchFailure('the Bisibility MCP request', settings.toolCallTimeoutMs + PROXY_GRACE_MS, error)
             sendJson(res, 502, { error: state.error })
           }
         },

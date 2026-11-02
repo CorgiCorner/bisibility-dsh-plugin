@@ -17,6 +17,7 @@ function fixture(fn) {
 test('check accepts the plugin', () => fixture((root, run) => assert.equal(run().status, 0)));
 test('check rejects invalid JavaScript', () => fixture((root, run) => { writeFileSync(join(root, 'client.js'), 'const = ;'); assert.notEqual(run().status, 0); }));
 test('check rejects locale mismatch', () => fixture((root, run) => { writeFileSync(join(root, 'locale/zh.json'), '{}'); assert.notEqual(run().status, 0); }));
+test('check rejects client locale mismatch', () => fixture((root, run) => { const p = join(root, 'client.js'); writeFileSync(p, readFileSync(p, 'utf8').replace("'update.required': '需要更新',", '')); assert.notEqual(run().status, 0); }));
 test('check rejects wrong patch name', () => fixture((root, run) => { const p = join(root, 'cordis.patch.yml'); writeFileSync(p, readFileSync(p, 'utf8').replace('@bisibility/dsh-plugin', '@example/wrong')); assert.notEqual(run().status, 0); }));
 test('check rejects a stale client module id', () => fixture((root, run) => { const p = join(root, 'client.js'); writeFileSync(p, readFileSync(p, 'utf8').replace("id: '@bisibility/dsh-plugin'", "id: '@local/bisibility'")); assert.notEqual(run().status, 0); }));
 test('check rejects invalid DSH range', () => fixture((root, run) => { const p = join(root, 'package.json'); const pkg = JSON.parse(readFileSync(p)); pkg.engines.dsh = 'invalid'; writeFileSync(p, JSON.stringify(pkg)); assert.notEqual(run().status, 0); }));

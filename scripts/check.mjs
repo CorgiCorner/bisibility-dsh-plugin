@@ -9,6 +9,12 @@ const keys = (value, prefix = '') => Object.entries(value).flatMap(([key, item])
 }).sort();
 for (const file of ['index.js', 'client.js']) execFileSync(process.execPath, ['--check', new URL(`../${file}`, import.meta.url).pathname], { stdio: 'inherit' });
 if (JSON.stringify(keys(JSON.parse(read('locale/en.json')))) !== JSON.stringify(keys(JSON.parse(read('locale/zh.json'))))) throw Error('Locale keys differ');
+const dictionary = (name) => {
+  const block = read('client.js').match(new RegExp(`const ${name} = \\{([\\s\\S]*?)\\n\\s*\\};`));
+  if (!block) throw Error(`client.js has no ${name} dictionary`);
+  return [...block[1].matchAll(/^\s*'?([\w.]+)'?:/gm)].map((match) => match[1]).sort();
+};
+if (JSON.stringify(dictionary('en')) !== JSON.stringify(dictionary('zh'))) throw Error('Client locale keys differ');
 const pkg = JSON.parse(read('package.json'));
 const row = read('cordis.patch.yml').match(/- id:\s*bisibility\s*\n\s*name:\s*['"]?([^'"\s]+)['"]?/);
 if (!row || row[1] !== pkg.name) throw Error('Plugin row does not match package name');

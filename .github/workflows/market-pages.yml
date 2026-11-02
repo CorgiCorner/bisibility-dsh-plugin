@@ -1,8 +1,9 @@
 name: Publish plugin market
+# The github-pages environment deploys only from main, so a tag-triggered run is rejected.
+# Every final release pushes main and its tag atomically; the main run sees the new tag.
 on:
   push:
     branches: [main]
-    tags: ['v[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
 permissions:
   contents: read
