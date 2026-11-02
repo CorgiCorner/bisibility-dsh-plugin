@@ -23,21 +23,30 @@ key to paste, no token in a config file.
 
 ## Install
 
-**From the plugin market (recommended, shows updates).** In Plugins, select More beside
-Experimental plugins and enable Custom plugin markets. Open Discover, select Add index
-source, and enter:
+### From the plugin market (recommended)
+
+The market is an experimental DeepSeek Harness feature, so its Discover tab is hidden until
+you switch it on:
+
+1. Open **Plugins** and select **More** beside **Experimental plugins**.
+2. Switch on **Custom plugin markets**. A **Discover** tab appears next to **Installed** at the
+   top of the Plugins page.
+3. Open **Discover**, select **Add index source**, and paste:
+
+   ```text
+   https://corgicorner.github.io/bisibility-dsh-plugin/index.json
+   ```
+
+   The index URL goes into Add index source, not into Add plugin.
+4. Select **bisibility**, confirm the source and commit, and install it.
+5. Quit and reopen DeepSeek Harness, then select **Connect account** in the bisibility panel.
+
+### With Add plugin
+
+Paste this release, pinned to its tag:
 
 ```text
-https://corgicorner.github.io/bisibility-dsh-plugin/index.json
-```
-
-Select bisibility and confirm the source and commit to install. The index URL goes into
-Add index source, not into Add plugin.
-
-**With Add plugin.** Paste this release, pinned to its tag:
-
-```text
-git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.2
+git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.3
 ```
 
 Without a tag, the address installs the latest release:
@@ -47,23 +56,25 @@ git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git
 ```
 
 The same addresses work with the CLI, for example
-`dsh plugin add git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.2`.
-
-After installing, quit and reopen DeepSeek Harness, then select Connect account in the
-bisibility panel.
+`dsh plugin add git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.3`.
+Then quit and reopen DeepSeek Harness and select **Connect account**.
 
 ## Updates and rollback
 
-The panel and the market show when a newer version is available; the panel reads the
-market index at most every six hours. Install the chosen
-version from the market card; choose an older version in the Versions list to roll back.
-For an Add plugin install, remove the plugin and add the address of the new tag. Release
-notes say what each update needs.
+DeepSeek Harness has no in-place upgrade for plugins outside its own catalog. When a newer
+version exists, the bisibility panel shows "bisibility X.Y.Z is available", and the bisibility
+card in Discover shows **Update available** (with a market source added). That label is a
+status, not a button. To update:
 
-After installing or updating, quit and reopen DeepSeek Harness. The desktop app has
-no reload shortcut, and the sidebar entry and Host code load at startup. Your
-bisibility sign-in survives updates: the OAuth records live in
-`~/.dsh/.credentials.yaml`, not in the plugin.
+1. Open **Plugins**, select **bisibility**, and select **Uninstall**.
+2. Install the new version: in **Discover** the bisibility card offers **Install** again, or
+   use Add plugin with the new tag.
+3. Quit and reopen DeepSeek Harness.
+
+Your sign-in survives the reinstall: the OAuth records live in `~/.dsh/.credentials.yaml`,
+not in the plugin. To roll back, install an older version from the card's **Versions** list
+or its tag. The panel reads the market index at most every six hours; release notes say what
+each update needs.
 
 ## Troubleshooting
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3 - 2026-11-02
+
+- The README gives step-by-step market setup, including the hidden Discover tab, and the uninstall-and-install update flow.
+
 ## 0.2.2 - 2026-11-02
 
 - The sign-in now survives restarts: after DeepSeek Harness starts on a new port, the plugin refreshes with its original OAuth client instead of failing with HTTP 400 and signing you out.
