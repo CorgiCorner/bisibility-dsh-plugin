@@ -12,6 +12,8 @@ if (JSON.stringify(keys(JSON.parse(read('locale/en.json')))) !== JSON.stringify(
 const pkg = JSON.parse(read('package.json'));
 const row = read('cordis.patch.yml').match(/- id:\s*bisibility\s*\n\s*name:\s*['"]?([^'"\s]+)['"]?/);
 if (!row || row[1] !== pkg.name) throw Error('Plugin row does not match package name');
+const client = read('client.js').match(/__ModuleLoader__\.load\(\{\s*id:\s*['"]([^'"]+)['"]/);
+if (!client || client[1] !== pkg.name) throw Error('Client module id does not match package name');
 if (typeof pkg.engines?.dsh !== 'string' || !pkg.engines.dsh.trim() || semver.validRange(pkg.engines.dsh) === null) throw Error('Invalid engines.dsh');
 const args = process.argv.slice(2);
 if (args.length) {

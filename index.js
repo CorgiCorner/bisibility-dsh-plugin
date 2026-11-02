@@ -198,6 +198,17 @@ async function readBody(req) {
   return Buffer.concat(chunks)
 }
 
+/**
+ * Whether a failed token refresh means the grant itself was rejected. Only
+ * then is the stored refresh token useless; a timeout, a network failure or a
+ * 5xx keeps it for the next attempt.
+ * @param status - HTTP status of the token endpoint, or undefined without a response.
+ * @returns true for 400 (invalid_grant) and 401 (invalid_client).
+ */
+export function refreshRejected(status) {
+  return status === 400 || status === 401
+}
+
 export const inject = ['webServer']
 
 /**
@@ -500,7 +511,9 @@ export function apply(ctx, config) {
       }
       const payload = await response.json().catch(() => null)
       if (!response.ok || payload === null || typeof payload.access_token !== 'string') {
-        throw new Error(`token refresh failed with HTTP ${response.status}`)
+        const failure = new Error(`token refresh failed with HTTP ${response.status}`)
+        failure.status = response.status
+        throw failure
       }
       state.accessToken = payload.access_token
       state.expiresAt = Date.now() + (Number.isFinite(payload.expires_in) ? payload.expires_in : 3600) * 1000
@@ -533,9 +546,16 @@ export function apply(ctx, config) {
       return true
     } catch (error) {
       const reason = messageOf(error)
-      resetAuth()
+      if (refreshRejected(error?.status)) {
+        ctx.logger?.warn?.(`bisibility: ${reason}; the refresh token was rejected`)
+        resetAuth()
+        await clearCredential(REFRESH_TOKEN_REF)
+      } else {
+        ctx.logger?.warn?.(`bisibility: ${reason}; keeping the refresh token for the next request`)
+        state.accessToken = null
+        state.expiresAt = 0
+      }
       state.error = reason
-      await clearCredential(REFRESH_TOKEN_REF)
       return false
     }
   }

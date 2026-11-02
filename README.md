@@ -42,9 +42,26 @@ dsh plugin add github:CorgiCorner/bisibility-dsh-plugin#<commit-sha>
 The market shows an update when a newer compatible version is available. Install
 the chosen version from the card; choose an older version in the Versions list to
 roll back. For a Git install, remove the existing plugin and add the new pinned
-commit. Reload the GUI page after client, copy, or locale changes. Reinstall for
-Host code, patch, package name, or path changes. Release notes identify the action
-needed. OAuth records in `~/.dsh/.credentials.yaml` survive updates.
+commit. Release notes say what each update needs.
+
+After installing or updating, quit and reopen DeepSeek Harness. The desktop app has
+no reload shortcut, and the sidebar entry and Host code load at startup. Your
+bisibility sign-in survives updates: the OAuth records live in
+`~/.dsh/.credentials.yaml`, not in the plugin.
+
+## Troubleshooting
+
+- **No bisibility icon in the sidebar.** Quit and reopen DeepSeek Harness.
+- **Startup reports `@bisibility/dsh-plugin: import failed`.** Another copy of the
+  plugin is installed, for example an older local install under a different name.
+  Remove every bisibility entry on the Plugins page, install it again from the market,
+  then quit and reopen the app.
+- **The panel asks you to connect again.** Select Connect account. If the browser
+  lands on the bisibility dashboard instead of returning to the harness, you are
+  signed in; select Connect account once more to finish.
+- **Installation is refused for an incompatible version.** The plugin declares the
+  DeepSeek Harness versions it supports. Update DeepSeek Harness, or pick a version
+  the market marks as compatible.
 
 ## How it works
 
@@ -96,6 +113,18 @@ Role ids (`bisibility`, `preset-bisibility`) and route paths
 
 ## Development
 
-Install a local checkout using a `link:` dependency in a development profile. Run
-`npm ci`, `npm run check`, and `node --test`. An optional Host smoke check is
-`node scripts/check.mjs --host http://127.0.0.1:3000` against a running Host.
+- Install a checkout into a development profile as a `link:` dependency, for example
+  through the Plugins page with the absolute path of the checkout.
+- `client.js`, copy, styles, and locale load in the browser half: reload the page.
+  Development builds have Reload Page (Cmd+R); in the packaged app open DevTools with
+  F12 and run `location.reload()`, or quit and reopen the app.
+- `index.js` and `cordis.patch.yml` load in the Host: remove and add the plugin again,
+  or restart the app.
+- The client module id in `client.js` and the patch row name must equal the package
+  name; `npm run check` enforces both.
+- Checks: `npm ci`, `npm run check`, and `node --test`. Against a running Host,
+  `node scripts/check.mjs --host http://127.0.0.1:3000` expects 401 from
+  `/bisibility/oauth/status`, 200 from an MCP `initialize`, and 403 for a request with
+  an `Origin` header.
+- Sign-in state lives in `~/.dsh/.credentials.yaml` under `BISIBILITY_OAUTH_*`. Remove
+  those entries to test a first sign-in.
