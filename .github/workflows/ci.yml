@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*-rc.*"]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  ci:
+    # Runs only in the public mirror. A release candidate tag push is the native CI that the
+    # final release promotes; the chore(release) push to main was already validated by it.
+    if: >-
+      github.repository == 'CorgiCorner/bisibility-dsh-plugin' &&
+      !(github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'chore(release): v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check:node && npm run check && node --test
