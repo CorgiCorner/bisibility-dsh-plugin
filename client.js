@@ -132,7 +132,9 @@ window.__ModuleLoader__.load({
       'audit.tab.details': 'Run details',
       'audit.gate': 'Site audits are included during the trial. After the trial, paid access is required to run a new audit. Saved audits remain readable.',
       'audit.denied': 'Paid access is required to run a new site audit after the trial.',
+      'audit.unavailable': 'Audits are unavailable for this project. After the trial, new audits need paid access; also check that you can access this project.',
       'audit.billing': 'View plans and billing',
+      'audit.project': 'Open project',
       'audit.empty': 'No audit yet.',
       'audit.pages': '{count} pages crawled',
       'audit.last': 'Last audit {date}',
@@ -395,7 +397,9 @@ window.__ModuleLoader__.load({
       'audit.tab.details': '运行细节',
       'audit.gate': '试用期间包含站点审计。试用结束后，需要付费访问权限才能运行新的审计。已保存的审计仍可阅读。',
       'audit.denied': '试用结束后，需要付费访问权限才能运行新的站点审计。',
+      'audit.unavailable': '此项目暂时无法进行审计。试用结束后，新的审计需要付费访问权限；请同时确认你拥有此项目的访问权限。',
       'audit.billing': '查看套餐和账单',
+      'audit.project': '打开项目',
       'audit.empty': '还没有审计。',
       'audit.pages': '已抓取 {count} 个页面',
       'audit.last': '上次审计 {date}',
@@ -2452,8 +2456,7 @@ ${groupIdentityCss()}
       const runCrawl = async () => {
         const started = projectRef.current;
         if (started === null || crawlRef.current.has(started)) return;
-        const operation = {};
-        const instance = auditInstance.current;
+        const operation = { instance: auditInstance.current };
         crawlRef.current.set(started, operation);
         setRunning(true);
         setAuditError(null);
@@ -2461,13 +2464,16 @@ ${groupIdentityCss()}
           const body = await readRoute('/bisibility/audit', { method: 'POST', body: { project: started } });
           if (!alive.current || projectRef.current !== started || crawlRef.current.get(started) !== operation) return;
           setRunAudit(body.audit);
-          if (auditInstance.current === instance && typeof body.audit?.id === 'string') setSelectedRunId(body.audit.id);
+          if (auditInstance.current === operation.instance && typeof body.audit?.id === 'string') setSelectedRunId(body.audit.id);
           if (body.audit !== null && typeof body.audit === 'object') setAuditToast(true);
           setTick((value) => value + 1);
         } catch (error) {
           if (!alive.current || projectRef.current !== started || crawlRef.current.get(started) !== operation) return;
           if (signInNeeded(error)) setAuthExpired(true);
-          setAuditError(routeFailure(error));
+          if (auditInstance.current === operation.instance) {
+            const failure = routeFailure(error);
+            setAuditError({ ...failure, status: typeof failure.status === 'number' ? failure.status : error.status });
+          }
         } finally {
           if (crawlRef.current.get(started) !== operation) return;
           crawlRef.current.delete(started);
@@ -2721,14 +2727,23 @@ ${groupIdentityCss()}
         h('a', { className: 'bis-link', href: billingUrl, target: '_blank', rel: 'noopener noreferrer' }, t('audit.billing')),
       ];
       const auditAccessNote = h('p', { className: 'bis-auditGate' }, ...auditAccessCopy);
-      // The MCP wrapper preserves the shared operation denial as HTTP 403 plus this message.
-      // Match only a failed crawl, not every permission error or a saved-audit read.
-      const auditAccessDenied = auditError !== null && auditError.status === 403 && auditError.message === 'This operation is unavailable for this project.';
+      // A generic 403 does not identify the cause. Only an explicit subscription signal does.
+      const auditSubscriptionRequired = auditError !== null && auditError.code === 'subscription_required';
+      const auditForbidden = auditError !== null && auditError.status === 403;
       const auditFailure = shownAuditError === null
         ? null
-        : auditAccessDenied
-          ? h('div', { className: 'bis-failure', role: 'alert' }, h('p', { className: 'bis-failureText' }, t('audit.denied')), auditAccessNote)
-          : h('pre', { className: 'bis-error' }, shownAuditError.message);
+        : auditSubscriptionRequired
+          ? h('div', { className: 'bis-failure', role: 'alert', 'data-audit-access': 'subscription_required' }, h('p', { className: 'bis-failureText' }, t('audit.denied')), auditAccessNote)
+          : auditForbidden
+            ? h('div', { className: 'bis-failure', role: 'alert', 'data-audit-access': 'forbidden' },
+                h('p', { className: 'bis-failureText' }, t('audit.unavailable')),
+                h('p', { className: 'bis-auditGate' },
+                  h('a', { className: 'bis-link', href: billingUrl, target: '_blank', rel: 'noopener noreferrer' }, t('audit.billing')),
+                  ' · ',
+                  h('a', { className: 'bis-link', href: `${origin}/app/${projectId}`, target: '_blank', rel: 'noopener noreferrer' }, t('audit.project')),
+                ),
+              )
+            : h('pre', { className: 'bis-error' }, shownAuditError.message);
 
       const historyRuns = [];
       const addHistoryRun = (row) => {
@@ -2789,6 +2804,9 @@ ${groupIdentityCss()}
        */
       const openAudit = (stage, runId) => {
         auditInstance.current += 1;
+        const operation = crawlRef.current.get(projectId);
+        if (stage === 'progress' && operation) operation.instance = auditInstance.current;
+        setAuditError(null);
         setAuditToast(false);
         setResultsOpen(false);
         setAuditStage(stage);
@@ -2897,7 +2915,10 @@ ${groupIdentityCss()}
                             label: t('audit.title'),
                             value: activeAuditView,
                             items: modalViews.map((view) => ({ value: view, label: t(`audit.tab.${view}`) })),
-                            onChange: setAuditView,
+                            onChange: (view) => {
+                              if (view === 'history') setAuditError(null);
+                              setAuditView(view);
+                            },
                           }),
                         ),
                         activeAuditView === 'history'
@@ -2911,6 +2932,7 @@ ${groupIdentityCss()}
                                 meta: [run.status === 'saved' || run.status === 'finished' ? t('audit.completed') : stopLabel(run.status, t), typeof run.pages === 'number' ? t('audit.pages', { count: formatNumber(run.pages, locale) }) : ''].filter(Boolean).join(' · '),
                                 buttonProps: { 'data-audit-history': run.id, 'aria-current': run.id === (activeRun && activeRun.id) ? 'true' : undefined },
                                 onOpen: () => {
+                                  setAuditError(null);
                                   setSelectedRunId(run.id);
                                   setAuditView('findings');
                                 },

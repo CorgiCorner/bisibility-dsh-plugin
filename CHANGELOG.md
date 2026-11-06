@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 - 2026-11-06
+
+- Explain audit access errors without assuming the trial has expired, and link to both the project and billing. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.
+
 ## 0.3.0 - 2026-11-06
 
 - Add a project-aware start screen with Ask suggestions, saved results, provider filters, and a searchable skill catalog. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.

@@ -688,7 +688,7 @@ test('growth audit rejects maxPages above 15', async () => {
   }
 });
 
-test('growth audit preserves the backend post-trial denial for the access block', async () => {
+test('growth audit preserves a generic backend denial without claiming subscription is required', async () => {
   const app = await harness({ mode: 'custom', custom: (name, args) => name === 'run_site_audit'
     ? toolIsError('This operation is unavailable for this project.', 403)
     : successTools(name, args) })
@@ -700,6 +700,43 @@ test('growth audit preserves the backend post-trial denial for the access block'
     app.restore()
   }
 })
+
+for (const [label, signal] of [
+  ['error code', { code: 'subscription_required' }],
+  ['problem type', { payload: { type: 'https://bisibility.com/problems/subscription-required' } }],
+  ['payload code', { payload: { code: 'subscription_required' } }],
+  ['payload flag', { payload: { subscriptionRequired: true } }],
+]) {
+  test(`audit access: MCP ${label} normalizes the dedicated subscription signal`, async () => {
+    const error = { message: 'bisibility API request failed.', status: 403, ...signal, payload: {
+      type: 'https://bisibility.com/problems/forbidden', title: 'Forbidden', detail: 'This operation is unavailable for this project.', ...signal.payload,
+    } };
+    const app = await harness({ mode: 'custom', custom: (name, args) => name === 'run_site_audit'
+      ? Response.json({ jsonrpc: '2.0', id: 1, result: { isError: true, structuredContent: { error }, content: [{ type: 'text', text: JSON.stringify({ error }) }] } })
+      : successTools(name, args) });
+    try {
+      const response = await app.request('POST', '/bisibility/audit', { project: PROJECT });
+      assert.equal(response.statusCode, 403);
+      assert.equal(payload(response).error.code, 'subscription_required');
+      assert.equal(payload(response).error.message, error.payload.detail);
+    } finally { app.restore(); }
+  });
+}
+
+test('audit access: the current generic MCP forbidden envelope stays non-subscription', async () => {
+  const error = { message: 'bisibility API request failed.', status: 403, payload: {
+    type: 'https://bisibility.com/problems/forbidden', title: 'Forbidden', detail: 'This operation is unavailable for this project.', subscriptionRequired: 'true',
+  } };
+  const app = await harness({ mode: 'custom', custom: (name, args) => name === 'run_site_audit'
+    ? Response.json({ jsonrpc: '2.0', id: 1, result: { isError: true, structuredContent: { error }, content: [{ type: 'text', text: JSON.stringify({ error }) }] } })
+    : successTools(name, args) });
+  try {
+    const response = await app.request('POST', '/bisibility/audit', { project: PROJECT });
+    assert.equal(response.statusCode, 403);
+    assert.notEqual(payload(response).error.code, 'subscription_required');
+    assert.equal(payload(response).error.message, error.payload.detail);
+  } finally { app.restore(); }
+});
 
 test('growth unknown project does not run an audit', async () => {
   const { request, names, restore } = await harness({ mode: 'success' });
@@ -1428,3 +1465,18 @@ test('review: disconnect prevents a retry of a superseded initial credential rea
     await disconnect;
   } finally { firstRead(null); clear(); app.restore(); }
 });
+
+for (const misplaced of [{ type: 'https://bisibility.com/problems/subscription-required' }, { subscriptionRequired: true }]) {
+  test(`audit access: misplaced ${Object.keys(misplaced)[0]} is not a subscription signal`, async () => {
+    const error = { message: 'bisibility API request failed.', status: 403, ...misplaced, payload: {
+      type: 'https://bisibility.com/problems/forbidden', detail: 'This operation is unavailable for this project.',
+    } };
+    const app = await harness({ mode: 'custom', custom: (name, args) => name === 'run_site_audit'
+      ? Response.json({ jsonrpc: '2.0', id: 1, result: { isError: true, structuredContent: { error } } }) : successTools(name, args) });
+    try {
+      const response = await app.request('POST', '/bisibility/audit', { project: PROJECT });
+      assert.equal(response.statusCode, 403);
+      assert.notEqual(payload(response).error.code, 'subscription_required');
+    } finally { app.restore(); }
+  });
+}

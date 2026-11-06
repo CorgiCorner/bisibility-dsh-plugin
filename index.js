@@ -589,6 +589,10 @@ function rangeEndingYesterday(days) {
 function problemFromTool(result) {
   const error = result?.structuredContent?.error
   const payload = error !== null && typeof error === 'object' ? error.payload : undefined
+  const subscriptionRequired = (value) => value !== null && typeof value === 'object' && (
+    value.code === 'subscription_required' || value.subscriptionRequired === true ||
+    (typeof value.type === 'string' && value.type.endsWith('/problems/subscription-required'))
+  )
   const detail = payload !== null && typeof payload === 'object' && typeof payload.detail === 'string' ? payload.detail.trim() : ''
   const message =
     detail !== ''
@@ -607,7 +611,11 @@ function problemFromTool(result) {
   return {
     message,
     status,
-    ...(error !== null && typeof error === 'object' && error.code !== undefined ? { code: error.code } : {}),
+    ...(error?.code === 'subscription_required' || subscriptionRequired(payload)
+      ? { code: 'subscription_required' }
+      : error !== null && typeof error === 'object' && error.code !== undefined
+        ? { code: error.code }
+        : payload !== null && typeof payload === 'object' && payload.code !== undefined ? { code: payload.code } : {}),
   }
 }
 

@@ -2098,50 +2098,75 @@ test('Run audit opens a preparation step and nothing runs before Start', async (
   assert.equal(posted(), 1)
 })
 
-test('audit preparation and post-trial denial explain paid access in both locales', async () => {
-  for (const [language, copy, denied, billing, start] of [
-    ['en', 'Site audits are included during the trial. After the trial, paid access is required to run a new audit. Saved audits remain readable.', 'Paid access is required to run a new site audit after the trial.', 'View plans and billing', 'Start audit'],
-    ['zh-CN', '试用期间包含站点审计。试用结束后，需要付费访问权限才能运行新的审计。已保存的审计仍可阅读。', '试用结束后，需要付费访问权限才能运行新的站点审计。', '查看套餐和账单', '开始审计'],
-  ]) {
-    const { fetchImpl, calls } = panelFetch({ handle: serveWorkflows((url, init) => {
-      if (url === '/bisibility/audit' && init.method === 'POST') {
-        return Response.json({ error: { kind: 'tool', status: 403, message: 'This operation is unavailable for this project.' } }, { status: 403 })
-      }
-    }) })
-    const panel = await mountPanel({ fetch: fetchImpl, language })
+const auditAccessLocales = [
+  { language: 'en', copy: 'Site audits are included during the trial. After the trial, paid access is required to run a new audit. Saved audits remain readable.', neutral: 'Audits are unavailable for this project. After the trial, new audits need paid access; also check that you can access this project.', definite: 'Paid access is required to run a new site audit after the trial.', billing: 'View plans and billing', project: 'Open project', start: 'Start audit' },
+  { language: 'zh-CN', copy: '试用期间包含站点审计。试用结束后，需要付费访问权限才能运行新的审计。已保存的审计仍可阅读。', neutral: '此项目暂时无法进行审计。试用结束后，新的审计需要付费访问权限；请同时确认你拥有此项目的访问权限。', definite: '试用结束后，需要付费访问权限才能运行新的站点审计。', billing: '查看套餐和账单', project: '打开项目', start: '开始审计' },
+]
+
+function assertAuditAccessLink(tree, label, suffix) {
+  const link = findNode(tree, (node) => node.type === 'a' && textOf(node) === label)
+  assert.equal(link?.props.href, `https://bisibility.com/app/${PANEL_PROJECT}${suffix}`)
+  assert.equal(link.props.target, '_blank')
+  assert.equal(link.props.rel, 'noopener noreferrer')
+}
+
+test('audit access: preparation explains trial and paid access without starting a crawl', async () => {
+  for (const locale of auditAccessLocales) {
+    const fixture = panelFetch({ handle: serveWorkflows() })
+    const panel = await mountPanel({ fetch: fixture.fetchImpl, language: locale.language })
     await openAuditPreparation(panel)
-    const dialog = () => findNode(panel.tree(), (node) => node.props?.role === 'dialog')
-    const assertAccess = (tree) => {
-      assert.ok(textOf(tree).includes(copy))
-      const link = findNode(tree, (node) => node.type === 'a' && textOf(node) === billing)
-      assert.equal(link?.props.href, `https://bisibility.com/app/${PANEL_PROJECT}/settings/billing`)
-      assert.equal(link.props.target, '_blank')
-      assert.equal(link.props.rel, 'noopener noreferrer')
-    }
-    assertAccess(dialog())
-    assert.equal(calls.filter((call) => call.url === '/bisibility/audit').length, 0)
-    findNode(dialog(), (node) => node.type === 'button' && textOf(node) === start).props.onClick()
-    await panel.settle()
-    const block = findNode(dialog(), (node) => node.props?.role === 'alert')
-    assert.ok(block, 'post-trial denial must render an access block even without a saved audit')
-    assert.ok(textOf(block).includes(denied))
-    assertAccess(block)
-    assert.equal(textOf(dialog()).includes('This operation is unavailable for this project.'), false)
+    const prep = findNode(panel.tree(), (node) => node.props?.className === 'bis-auditPrep')
+    assert.ok(textOf(prep).includes(locale.copy))
+    assertAuditAccessLink(prep, locale.billing, '/settings/billing')
+    assert.equal(findNode(prep, (node) => node.props?.['data-audit-access']), null)
+    assert.equal(fixture.calls.filter((call) => call.url === '/bisibility/audit').length, 0)
   }
 })
 
-test('other audit failures do not claim paid access is required', async () => {
-  for (const [status, message] of [[403, 'Project permission denied.'], [502, 'This operation is unavailable for this project.']]) {
-    const { fetchImpl } = panelFetch({ handle: serveWorkflows((url, init) => {
-      if (url === '/bisibility/audit' && init.method === 'POST') return Response.json({ error: { status, message } }, { status })
-    }) })
-    const panel = await mountPanel({ fetch: fetchImpl })
+test('audit access: every generic crawl 403 stays neutral and links to billing and project', async () => {
+  for (const locale of auditAccessLocales) for (const error of [
+    { kind: 'tool', status: 403, message: 'This operation is unavailable for this project.' },
+    { message: 'Project permission denied.' },
+  ]) {
+    const fixture = panelFetch({ handle: serveWorkflows((url, init) => url === '/bisibility/audit' && init.method === 'POST' ? Response.json({ error }, { status: 403 }) : undefined) })
+    const panel = await mountPanel({ fetch: fixture.fetchImpl, language: locale.language })
     await openAuditPreparation(panel)
-    findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === 'Start audit').props.onClick()
+    findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === locale.start).props.onClick()
     await panel.settle()
-    assert.equal(findNode(panel.tree(), (node) => node.props?.role === 'alert'), null)
-    assert.ok(textOf(findNode(panel.tree(), (node) => node.props?.className === 'bis-error')).includes(message))
+    const block = findNode(panel.tree(), (node) => node.props?.['data-audit-access'] === 'forbidden')
+    assert.ok(block, 'generic 403 needs the neutral block')
+    assert.ok(textOf(block).includes(locale.neutral))
+    assert.equal(textOf(block).includes(locale.definite), false)
+    assertAuditAccessLink(block, locale.billing, '/settings/billing')
+    assertAuditAccessLink(block, locale.project, '')
   }
+})
+
+test('audit access: only a dedicated subscription signal claims paid access is required', async () => {
+  for (const locale of auditAccessLocales) for (const status of [402, 403]) {
+    const fixture = panelFetch({ handle: serveWorkflows((url, init) => url === '/bisibility/audit' && init.method === 'POST'
+      ? Response.json({ error: { kind: 'tool', status, code: 'subscription_required', message: 'An active subscription is required.' } }, { status }) : undefined) })
+    const panel = await mountPanel({ fetch: fixture.fetchImpl, language: locale.language })
+    await openAuditPreparation(panel)
+    findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === locale.start).props.onClick()
+    await panel.settle()
+    const block = findNode(panel.tree(), (node) => node.props?.['data-audit-access'] === 'subscription_required')
+    assert.ok(block)
+    assert.ok(textOf(block).includes(locale.definite))
+    assertAuditAccessLink(block, locale.billing, '/settings/billing')
+    assert.equal(findNode(block, (node) => node.type === 'a' && textOf(node) === locale.project), null)
+  }
+})
+
+test('audit access: other failures retain their error without an access block', async () => {
+  const fixture = panelFetch({ handle: serveWorkflows((url, init) => url === '/bisibility/audit' && init.method === 'POST'
+    ? Response.json({ error: { status: 502, message: 'Temporary outage.' } }, { status: 502 }) : undefined) })
+  const panel = await mountPanel({ fetch: fixture.fetchImpl })
+  await openAuditPreparation(panel)
+  findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === 'Start audit').props.onClick()
+  await panel.settle()
+  assert.equal(findNode(panel.tree(), (node) => node.props?.['data-audit-access']), null)
+  assert.ok(textOf(findNode(panel.tree(), (node) => node.props?.className === 'bis-error')).includes('Temporary outage.'))
 })
 
 test('View latest opens the saved report, and Run again stays a shortcut inside it', async () => {
@@ -3683,4 +3708,77 @@ test('review: returning to a project preserves its in-flight crawl guard', async
   gate.release(Response.json(lazyAuditBody(LAZY_AUDIT)))
   await panel.settle()
   assert.ok(findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === 'Run again'))
+})
+
+for (const error of [
+  { status: 403, message: 'This operation is unavailable for this project.' },
+  { status: 403, code: 'subscription_required', message: 'An active subscription is required.' },
+]) {
+  test(`audit access: saved reads never show ${error.code || 'generic forbidden'} access blocks`, async () => {
+    for (const locale of auditAccessLocales) {
+      const fixture = lazyPanel({ route: (url) => url.includes('/audit?') ? Response.json({ error }, { status: 403 }) : undefined })
+      const panel = await mountPanel({ fetch: fixture.fetchImpl, language: locale.language })
+      findNode(panel.tree(), (node) => node.props?.['data-audit'] === 'latest').props.onClick()
+      await panel.settle()
+      assert.equal(findNode(panel.tree(), (node) => node.props?.['data-audit-access']), null)
+      assert.ok(findNode(panel.tree(), (node) => node.props?.className === 'bis-failure'))
+    }
+  })
+}
+
+test('audit access: an old or late crawl denial never replaces a saved report', async () => {
+  for (const late of [false, true]) {
+    const gate = deferred()
+    const denied = () => Response.json({ error: { status: 403, message: 'This operation is unavailable for this project.' } }, { status: 403 })
+    const fixture = lazyPanel({ route: (url) => url === '/bisibility/audit' ? late ? gate.promise : denied() : undefined })
+    const panel = await mountPanel({ fetch: fixture.fetchImpl })
+    await openAuditPreparation(panel)
+    findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === 'Start audit').props.onClick()
+    await panel.settle()
+    findNode(panel.tree(), (node) => node.props?.['aria-label'] === 'Close').props.onClick()
+    await panel.settle()
+    findNode(panel.tree(), (node) => node.props?.['data-audit'] === 'latest').props.onClick()
+    await panel.settle()
+    if (late) { gate.release(denied()); await panel.settle() }
+    assert.equal(findNode(panel.tree(), (node) => node.props?.['data-audit-access']), null)
+    assert.equal(textOf(panel.tree()).includes(auditAccessLocales[0].definite), false)
+    assert.equal(textOf(panel.tree()).includes(auditAccessLocales[0].neutral), false)
+    assert.ok(textOf(findNode(panel.tree(), (node) => node.props?.role === 'dialog')).includes('Missing title'))
+  }
+})
+
+test('audit access: browsing history clears the failed-crawl access block', async () => {
+  const fixture = lazyPanel({ route: (url) => url === '/bisibility/audit'
+    ? Response.json({ error: { status: 403, message: 'No project access.' } }, { status: 403 }) : undefined })
+  const panel = await mountPanel({ fetch: fixture.fetchImpl })
+  await openAuditPreparation(panel)
+  findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === 'Start audit').props.onClick()
+  await panel.settle()
+  assert.ok(findNode(panel.tree(), (node) => node.props?.['data-audit-access'] === 'forbidden'))
+  findNode(panel.tree(), (node) => node.props?.role === 'tab' && textOf(node) === 'History').props.onClick()
+  await panel.settle()
+  assert.equal(findNode(panel.tree(), (node) => node.props?.['data-audit-access']), null)
+})
+
+test('audit access: reopening active progress preserves its eventual failure', async () => {
+  for (const error of [
+    { status: 403, message: 'This operation is unavailable for this project.' },
+    { status: 403, code: 'subscription_required', message: 'An active subscription is required.' },
+    { status: 502, message: 'Temporary audit outage.' },
+  ]) {
+    const gate = deferred()
+    const fixture = panelFetch({ handle: serveWorkflows((url, init) => url === '/bisibility/audit' && init.method === 'POST' ? gate.promise : undefined) })
+    const panel = await mountPanel({ fetch: fixture.fetchImpl })
+    await openAuditPreparation(panel)
+    findNode(panel.tree(), (node) => node.type === 'button' && textOf(node) === 'Start audit').props.onClick()
+    await panel.settle()
+    findNode(panel.tree(), (node) => node.props?.['aria-label'] === 'Close').props.onClick()
+    await panel.settle()
+    findNode(panel.tree(), (node) => node.props?.['data-skill'] === 'seo-audit').props.onClick()
+    await panel.settle()
+    gate.release(Response.json({ error }, { status: error.status }))
+    await panel.settle()
+    if (error.status === 403) assert.ok(findNode(panel.tree(), (node) => node.props?.['data-audit-access'] === (error.code || 'forbidden')))
+    else assert.ok(textOf(findNode(panel.tree(), (node) => node.props?.className === 'bis-error')).includes(error.message))
+  }
 })
