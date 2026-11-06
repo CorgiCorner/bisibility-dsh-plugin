@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 - 2026-11-06
+
+- Add a project-aware start screen with Ask suggestions, saved results, provider filters, and a searchable skill catalog. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.
+- Prepare and run a site audit of up to 15 pages, then review findings, pages, run details, and history in one dialog. Audits are included during the trial and require paid access afterward; the panel links to plans and billing. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.
+- Bundle 19 task skills with plain slash commands and draft-only handoffs, including guidance when no workspace is open. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.
+- Load provider connections independently, defer project details until opened, and use complete Search Console totals when available. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.
+- Keep cached data tied to the current sign-in and protect project and audit actions from stale responses. Reinstall or update from Discover, then quit and reopen DeepSeek Harness.
+
 ## 0.2.3 - 2026-11-02
 
 - The README gives step-by-step market setup, including the hidden Discover tab, and the uninstall-and-install update flow.

@@ -1,6 +1,6 @@
 {
   "name": "@bisibility/dsh-plugin",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Bisibility panel in the left sidebar plus the Bisibility MCP connection it manages",
@@ -13,9 +13,14 @@
   "files": [
     "index.js",
     "client.js",
+    "workflows.js",
+    "skills.js",
+    "ask.js",
+    "skills/",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.png"
+    "icon.png",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "dsh": {
     "bundle": {
@@ -58,6 +63,7 @@
     "test": "node --test"
   },
   "devDependencies": {
+    "happy-dom": "^21.0.4",
     "semver": "^7.8.5"
   }
 }

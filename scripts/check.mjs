@@ -1,13 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import semver from 'semver';
+import { assertSkillBundle } from './check-skill-bundle.mjs';
+import { validateWorkflowManifest, WORKFLOWS, WORKFLOW_SKILL_NAMES } from '../workflows.js';
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const keys = (value, prefix = '') => Object.entries(value).flatMap(([key, item]) => {
   const name = prefix ? `${prefix}.${key}` : key;
   return item && typeof item === 'object' && !Array.isArray(item) ? keys(item, name) : [name];
 }).sort();
-for (const file of ['index.js', 'client.js']) execFileSync(process.execPath, ['--check', new URL(`../${file}`, import.meta.url).pathname], { stdio: 'inherit' });
+for (const file of ['index.js', 'client.js', 'workflows.js', 'skills.js', 'ask.js']) execFileSync(process.execPath, ['--check', new URL(`../${file}`, import.meta.url).pathname], { stdio: 'inherit' });
+assertSkillBundle(new URL('..', import.meta.url));
+validateWorkflowManifest(WORKFLOWS, WORKFLOW_SKILL_NAMES);
 if (JSON.stringify(keys(JSON.parse(read('locale/en.json')))) !== JSON.stringify(keys(JSON.parse(read('locale/zh.json'))))) throw Error('Locale keys differ');
 const dictionary = (name) => {
   const block = read('client.js').match(new RegExp(`const ${name} = \\{([\\s\\S]*?)\\n\\s*\\};`));

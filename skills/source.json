@@ -1,0 +1,258 @@
+{
+  "version": 2,
+  "algorithm": "sha256",
+  "source": "plugin-skill-files.generated.json",
+  "commit": "6b9c571153b33fe35c66aaa586a261f5fc90af6c",
+  "referenceForm": "the `<slug>` skill",
+  "sha256": "2dfd1ebc91a86d2aeafeae571e8ec9575063301acc63d7a68aa732d7ee7ff720",
+  "packs": {
+    "router": {
+      "members": [
+        "bisibility",
+        "seo-coach"
+      ],
+      "requires": [
+        "ai-prompt-research",
+        "ai-visibility-audit",
+        "alert-triage",
+        "backlink-profile-analysis",
+        "competitive-landscape",
+        "competitor-analysis",
+        "domain-onboarding",
+        "keyword-clustering",
+        "keyword-import",
+        "keyword-opportunity-research",
+        "local-seo",
+        "project-setup",
+        "provider-setup",
+        "rank-tracking-report",
+        "self-host-health",
+        "seo-audit",
+        "team-api-governance",
+        "weekly-report"
+      ]
+    },
+    "project-onboarding": {
+      "members": [
+        "domain-onboarding",
+        "keyword-import"
+      ],
+      "requires": [
+        "provider-setup"
+      ]
+    },
+    "instance-diagnosis": {
+      "members": [
+        "self-host-health"
+      ],
+      "requires": [
+        "provider-setup"
+      ]
+    }
+  },
+  "skills": {
+    "ai-prompt-research": {
+      "pack": null,
+      "requires": []
+    },
+    "ai-visibility-audit": {
+      "pack": null,
+      "requires": []
+    },
+    "alert-triage": {
+      "pack": null,
+      "requires": []
+    },
+    "backlink-profile-analysis": {
+      "pack": null,
+      "requires": []
+    },
+    "bisibility": {
+      "pack": "router",
+      "requires": [
+        "ai-prompt-research",
+        "ai-visibility-audit",
+        "alert-triage",
+        "competitive-landscape",
+        "competitor-analysis",
+        "domain-onboarding",
+        "keyword-import",
+        "keyword-opportunity-research",
+        "local-seo",
+        "provider-setup",
+        "self-host-health",
+        "team-api-governance",
+        "weekly-report"
+      ]
+    },
+    "competitive-landscape": {
+      "pack": null,
+      "requires": []
+    },
+    "competitor-analysis": {
+      "pack": null,
+      "requires": []
+    },
+    "domain-onboarding": {
+      "pack": "project-onboarding",
+      "requires": [
+        "keyword-import",
+        "provider-setup"
+      ]
+    },
+    "keyword-clustering": {
+      "pack": null,
+      "requires": []
+    },
+    "keyword-import": {
+      "pack": "project-onboarding",
+      "requires": [
+        "provider-setup"
+      ]
+    },
+    "keyword-opportunity-research": {
+      "pack": null,
+      "requires": []
+    },
+    "local-seo": {
+      "pack": null,
+      "requires": []
+    },
+    "project-setup": {
+      "pack": null,
+      "requires": []
+    },
+    "provider-setup": {
+      "pack": null,
+      "requires": []
+    },
+    "rank-tracking-report": {
+      "pack": null,
+      "requires": []
+    },
+    "self-host-health": {
+      "pack": "instance-diagnosis",
+      "requires": [
+        "provider-setup"
+      ]
+    },
+    "seo-audit": {
+      "pack": null,
+      "requires": [
+        "ai-visibility-audit"
+      ]
+    },
+    "seo-coach": {
+      "pack": "router",
+      "requires": [
+        "ai-prompt-research",
+        "ai-visibility-audit",
+        "alert-triage",
+        "backlink-profile-analysis",
+        "bisibility",
+        "competitive-landscape",
+        "competitor-analysis",
+        "domain-onboarding",
+        "keyword-clustering",
+        "keyword-import",
+        "keyword-opportunity-research",
+        "local-seo",
+        "project-setup",
+        "provider-setup",
+        "rank-tracking-report",
+        "self-host-health",
+        "seo-audit",
+        "team-api-governance",
+        "weekly-report"
+      ]
+    },
+    "team-api-governance": {
+      "pack": null,
+      "requires": []
+    },
+    "weekly-report": {
+      "pack": null,
+      "requires": []
+    }
+  },
+  "files": {
+    "ai-prompt-research/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "ai-prompt-research/SKILL.md": "5b533e77db648ee78023e5e8eb0083ada2ac7b66c739578ea9efb50330a20430",
+    "ai-prompt-research/references/example-report.json": "395bbad80589629c159879f5093e3dba6ffff56a951207f7d84256a201fc4315",
+    "ai-prompt-research/references/report.md": "30b9d9e18149763738f4406ec253c3297b0756f85b5cb65cf83845666c8e45dd",
+    "ai-prompt-research/references/workflow.md": "db688f7c36b5e2969725d9a9e0fb410049fae340ba866ea7d549c908cffb679b",
+    "ai-prompt-research/scripts/validate-report.mjs": "a2e67eb71467f6061b86c3cd3af6cfb7a07f24f1ec6fb5f884df8641cb3d5bb5",
+    "ai-visibility-audit/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "ai-visibility-audit/SKILL.md": "5fcd90b1ac0ee043f00cd67b20ea2621feae69c937ae8d9481b693b54b601875",
+    "ai-visibility-audit/references/example-report.json": "328785f9f16a918f3dd496af985e2c2d512819a04064809de0bafb41435abf4e",
+    "ai-visibility-audit/references/report.md": "ec30125a6596f0c0b9cbabff015b434cffc039aa50d6ee3419f30d4c22ee5037",
+    "ai-visibility-audit/references/workflow.md": "6ef09b11199585c9e40d2345a9426c6270a42382660fcc22bfe969a5aff910e4",
+    "alert-triage/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "alert-triage/SKILL.md": "be2a97623077b934929a86939f3327925ec236cac500a5a9d2439311c2d8ecd4",
+    "alert-triage/references/workflow.md": "f32b4ed6c6d31cbfe372c57cb2a575d2e96d2a563d8d3414ef507d67b8a4f45b",
+    "backlink-profile-analysis/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "backlink-profile-analysis/SKILL.md": "9a182199acaa9bdc3f146b79a2887d2e408cd554dea974058ea62215ba0317cc",
+    "backlink-profile-analysis/references/workflow.md": "dad787cb05e56f7fa7d3884c57cda0751e2147c9ecbf72313e3cbaacf8ac7d9e",
+    "bisibility/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "bisibility/SKILL.md": "274a7fc51a96204a0a0c303ee4f35caf5910941a4e53c6b7ff84a24c2253129e",
+    "bisibility/references/api.md": "0ca0f43e5027f61286e2aba6c2256711c046a960cc5415221c86ce729179d07a",
+    "competitive-landscape/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "competitive-landscape/SKILL.md": "69610515dbdbd4f722c8d61ae7d30a3ce6170abfee64e109c23e0fd57d3e88cf",
+    "competitive-landscape/references/example-report.json": "bf8e9bee970fb514e5d5147083393d23b15226285c515827eed9a1233f78301a",
+    "competitive-landscape/references/report.md": "a1521ee2124cbcdfd7d9bd87c0956ac90de8df3c20ddd5521f146e9ac356308d",
+    "competitive-landscape/references/workflow.md": "cb0379aa0f3edc93880971670f34f1169a152610b3e666a5a352e9b5ac34677c",
+    "competitor-analysis/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "competitor-analysis/SKILL.md": "c87fc0998ed77a386c300960afac75df9d7e742205aa47489294b9a1f5437c56",
+    "competitor-analysis/references/example-report.json": "c98e7cbbd94bff6e736083916ac4174e7666237c9cfef209b18379f84298a40f",
+    "competitor-analysis/references/report.md": "c5de05bcc4a82371505a857489eee9b019df3b23849c6ef666e9b6881f07d947",
+    "competitor-analysis/references/workflow.md": "e59254468a761ca82c46083ef845bbb4c4bc86c68f00dc450313edd67682c5ab",
+    "domain-onboarding/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "domain-onboarding/SKILL.md": "9595bbd691ba6488f727e52de951e593f0d9c33158046cf0dc6822225cea825a",
+    "domain-onboarding/references/api.md": "5225aa17de3b94245e218a1801308de573ed088ec5aba9b8685a00af939f27af",
+    "keyword-clustering/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "keyword-clustering/SKILL.md": "c3f147cde93350f3f3077a07368e6acac3df232c05922a44343efc41de09d12b",
+    "keyword-clustering/references/example-report.json": "1b029ef861612fb69fd6fee2cd3c5741e74979072fb3ab8f500d18e244dfbfb0",
+    "keyword-clustering/references/report.md": "c4e34ffdd538ef30e412605ef6ecf915be04a5f92ff08080d58db9b50144410b",
+    "keyword-clustering/references/workflow.md": "aabf30973b3bb979eac7c90375b4a50897e93e8db38ca112b3c3f3ef33c5bfa3",
+    "keyword-import/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "keyword-import/SKILL.md": "3ad23330b1da1a14ec41b1d1c90116ee742f03f6719e2cca7fbf54203ce1dc4a",
+    "keyword-import/references/api.md": "1ef05d39bb07506da2c8301acced0441fda94ace9abb525062d0e3c41a1d175b",
+    "keyword-opportunity-research/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "keyword-opportunity-research/SKILL.md": "0b2980a3375a877c3d82aa3eee62ae0ea04583158ae418a4fedee3f6c76a7a88",
+    "keyword-opportunity-research/references/workflow.md": "b50d164056f7a0c5c71f8e10335d1d6b3b10a402cc6010f7f92283d016626252",
+    "local-seo/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "local-seo/SKILL.md": "9d1e006c4b5ad58fe93fd8a0f145d9f0fe6062bb2ade8964fb0ab2a002840a57",
+    "local-seo/references/example-report.json": "a543f8717a0b166a66b3bcdf81da0c7b9921194de101ec24ad4014c0042594a7",
+    "local-seo/references/report.md": "e413e70cb61e3a6147780e44f80828b137ee42817c0e4f83ecb246df3c96d919",
+    "local-seo/references/workflow.md": "eaec9fbe376be5d4508081f544fee6fba78482b89c35ea4b4ead2c572d36c66e",
+    "project-setup/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "project-setup/SKILL.md": "879666771712f561fe27fac68299452c0029cba7f70d9d8788a7d784a5d95a5c",
+    "project-setup/references/workflow.md": "b912e4887dda44e56fedb24871f8af5c4b2570f765389783cd3c14266984c0b3",
+    "provider-setup/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "provider-setup/SKILL.md": "48c93d6cc01ad0a58bb81f2fc69d7be365227a5044710012d9efe7f679a8743f",
+    "provider-setup/references/api.md": "2396b9f15179f2a8719d3e9474afa53f2e3de26e53cde720fccd127c0b44cb14",
+    "rank-tracking-report/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "rank-tracking-report/SKILL.md": "f538914bec722eeaf0af022bd93b09ee38ce8a3b2131ab79f58eff3049c7082b",
+    "rank-tracking-report/references/workflow.md": "ee6691fcfce79ee8fbd341b6dd5f18f06494e2840eb8ce25ee1641703037cdf0",
+    "self-host-health/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "self-host-health/SKILL.md": "aa2d567df7b7dacd929565f1c67e868537db6365a2fe663d290b93c068934a84",
+    "self-host-health/references/api.md": "e329d3846c83545bb49c82c406b874ee96d200a20ac1a5e0b3a0c31a4b8410ca",
+    "seo-audit/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "seo-audit/SKILL.md": "54c4dc24f1acac8cfce2fd96e1b4463d5677e523b42f5e7801134f25834a8926",
+    "seo-audit/references/example-report.json": "e75e5df5d10dd42604e91c1aeeb6cf2ea218a27cd8ebf5d83ac7eff3e1a130b7",
+    "seo-audit/references/page-indexing.md": "164566b1ec5986662d05f2609e17e70c6f3c8ea0af56ed3fc37411c43d6c912a",
+    "seo-audit/references/report.md": "1711e45500925ba382fda0aa861a145df6c8b8a812b61a1bb614a02440a6f4f4",
+    "seo-audit/references/workflow.md": "278d534effd926c05b50cbdb9c6504ff076142d9f72fa386ac1235674e56d9e7",
+    "seo-audit/scripts/validate-report.d.mts": "6866e301d28a6ad4d67a41819b8e797aac94eebda3bf2ffa4439612b389865ad",
+    "seo-audit/scripts/validate-report.mjs": "b05f744601e2b62909164cc41243b08119f7f57f04037fd7b971aaf3a30656a0",
+    "seo-coach/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "seo-coach/SKILL.md": "fffed1be54c6023ba6d95fd90a57c892d08b9a98c1364e09c0f53205be819705",
+    "seo-coach/references/workflow.md": "bc6473853d02a21caf2b4c60cc35dcab42f0c32c42595dc3e362a0b7c744ac57",
+    "team-api-governance/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "team-api-governance/SKILL.md": "db02b6567a75f61b4912005470514e51b423b5d5e7299a47252c0af9069f9408",
+    "team-api-governance/references/api.md": "2625d968b5242f3f94c91851dec5ed5effe144fa8b6809f56bdcabdda7d3d8a4",
+    "weekly-report/LICENSE": "d4456355f6a26041c21287ba4d9b75ff09e8cab93c77df276b81b7dfe5934b94",
+    "weekly-report/SKILL.md": "a99f6aed65d07665e76983cb9598c0a3b7d54254d42cb4ac95952b942d7c320d",
+    "weekly-report/references/api.md": "bb57555bef562c8fb854883bedb6e02b052c266517c4a5777dca92cc8480c580"
+  }
+}

@@ -46,7 +46,7 @@ you switch it on:
 Paste this release, pinned to its tag:
 
 ```text
-git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.3
+git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.3.0
 ```
 
 Without a tag, the address installs the latest release:
@@ -56,7 +56,7 @@ git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git
 ```
 
 The same addresses work with the CLI, for example
-`dsh plugin add git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.2.3`.
+`dsh plugin add git+https://github.com/CorgiCorner/bisibility-dsh-plugin.git#v0.3.0`.
 Then quit and reopen DeepSeek Harness and select **Connect account**.
 
 ## Updates and rollback

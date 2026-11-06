@@ -11,9 +11,9 @@
 
     # A named conversation preset. Sessions started from the panel use it, so the
     # chat is visibly marked "Bisibility" and records that preset in its log.
-    # The composition is empty on purpose: the host already provides the agent
-    # loop, tools, skills and prompt sections, and this bundle adds the MCP
-    # client at runtime. Duplicating the shipped standard rows here would drift.
+    # The host owns the skill registry; each preset mounts its own skill loader.
+    # Match the standard preset's tool-skill row for native /name invocation.
+    # This bundle adds the MCP client at runtime.
     - id: preset-bisibility
       name: '@deepseek-ai/dsh-agent-preset'
       config:
@@ -21,4 +21,6 @@
         name: bisibility
         description: bisibility tools for SEO and AI visibility work.
         order: 20
-        plugins: []
+        plugins:
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
